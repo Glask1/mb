@@ -30,7 +30,7 @@ add a new album to the review catalog.
 - Then adds album to list, calls other two functions.
 - adds album to ../index.html after the flag <!---new--->
 
-
+![new](https://glask.info/blog/img/mb_n.png)
 
     ./mb i
     
