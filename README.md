@@ -29,7 +29,7 @@ add a new album to the review catalog.
 - Fills in information based on what is inputted by user. 
 - Then adds album to list, calls other two functions.
 - adds album to ../index.html after the flag <!---new--->
-![new](https://glask.info/blog/img/mb_n.png)
+![new](https://glask.info/blog/img/mb_example.png)
 ```
     ./mb i
 ```
