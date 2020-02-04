@@ -1,0 +1,77 @@
+#!/bin/bash
+
+index() { cp artist_frame.html tmp.html
+	sort -k1 -r list |cut -d ',' -f1 | uniq | while read line
+	do	
+	title=`echo $line | sed "s/ /-/g"`
+	sed -e '/<ul>/r artist_insert.html' tmp.html > tmp2.html
+	sed -i "s/Title/$title/g" tmp2.html
+	sed -i "s/Artist/$line/g" tmp2.html
+	mv tmp2.html tmp.html
+	done
+	mv tmp.html index.html
+}
+
+rank() { cp rank_frame.html tmp.html
+	sort -k3 -t, -g list | while read line
+	do
+	artist=`echo $line | cut -d ',' -f1`
+	album=`echo $line | cut -d ',' -f2`
+	score=`echo $line | cut -d ',' -f3`
+	title=`echo $artist | sed "s/ /-/g"`
+	if [ ${score:0:1} -lt 7 ];
+	then
+		continue	
+	fi
+	sed -e '/<ol>/r rank_insert.html' tmp.html > tmp2.html
+	sed -i "s/Title/$title/g" tmp2.html
+	sed -i "s#Score#$score#g" tmp2.html
+	sed -i "s/Album/$album/g" tmp2.html
+	sed -i "s/Artist/$artist/g" tmp2.html	
+	url=`curl -s "http://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=1ad0a7877df6c28d40e8b665eb570d97&artist=$artist&album=$album" | sed -n '8p' | sed -e "s#^.*http#http#" | rev | cut -c 9- | rev`
+	
+	if [ "$album" = "Mista Thug Isolation" ];
+	then
+		url="https://upload.wikimedia.org/wikipedia/en/e/e8/MistaThugIsolationcover.jpg"
+	fi
+
+	sed -i "s#url#$url#g" tmp2.html
+	mv tmp2.html tmp.html
+	done
+	mv tmp.html rank.html
+}
+
+newpost() { read -erp "Artist: " artist
+	title=`echo $artist | sed "s/ /-/g"`
+	if [ ! -e "$title.html" ] ; then
+		cp artist.html $title.html
+		sed -i "s#Artist#$artist#g" $title.html
+	fi
+	sed -e '/h1/r insert.html' $title.html > tmp.html
+	cat tmp.html > $title.html
+	rm tmp.html
+	read -erp "Album: " album
+	sed -i "s#Album#$album#g" $title.html
+	id=`curl "https://api.discogs.com/database/search?type=release&?release&artist=$artist&title=$album&token=ToSvxjGkjWrTmQrQLnfNRmsnArPWgzcFGInURQUU" | jq -r '.results[0].master_id'`
+	year=`curl https://api.discogs.com/masters/$id | jq -r '.year'`
+	sed -i "s#Year#$year#g" $title.html
+	read -erp "Review: " review
+	sed -i "s#Review#$review#g" $title.html
+	read -erp "Score: " score
+	sed -i "s#Score#$score#g" $title.html
+	url=`curl -s "http://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=1ad0a7877df6c28d40e8b665eb570d97&artist=$artist&album=$album" | sed -n '8p' | sed -e "s#^.*http#http#" | rev | cut -c 9- | rev`
+	
+
+	sed -i "s#url#$url#g" $title.html
+	sed -i "/new/ a\ <li><a href='artists/$title.html#$album'><em>$album</em></a> - $artist</li>" ../index.html
+
+	echo "$artist,$album,$score" >> list
+	index
+	rank
+}
+
+case "$1" in
+	i*) index ;;
+	n*) newpost ;;
+	r*) rank ;;
+esac
